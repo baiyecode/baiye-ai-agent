@@ -2,6 +2,10 @@ package com.baiye.baiyeaiagent.exception;
 
 import lombok.Getter;
 
+
+/**
+ * 自定义业务异常类
+ */
 @Getter
 public class BusinessException extends RuntimeException {
 

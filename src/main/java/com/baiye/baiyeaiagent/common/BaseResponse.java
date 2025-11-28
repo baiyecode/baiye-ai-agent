@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * 通用响应类
+ */
 @Data
 public class BaseResponse<T> implements Serializable {
 

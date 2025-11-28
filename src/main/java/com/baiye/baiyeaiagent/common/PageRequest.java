@@ -2,6 +2,9 @@ package com.baiye.baiyeaiagent.common;
 
 import lombok.Data;
 
+/**
+ * 分页请求包装类
+ */
 @Data
 public class PageRequest {
 

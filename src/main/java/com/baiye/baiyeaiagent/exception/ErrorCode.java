@@ -2,6 +2,9 @@ package com.baiye.baiyeaiagent.exception;
 
 import lombok.Getter;
 
+/**
+ * 错误码枚举类
+ */
 @Getter
 public enum ErrorCode {
 
