@@ -14,6 +14,8 @@ import java.util.Map;
  */
 public class ReReadingAdvisor implements BaseAdvisor {
 
+	//https://docs.spring.io/spring-ai/reference/api/advisors.html#_re_reading_re2_advisor
+
 	private static final String DEFAULT_RE2_ADVISE_TEMPLATE = """
 			{re2_input_query}
 			Read the question again: {re2_input_query}

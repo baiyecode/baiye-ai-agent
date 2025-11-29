@@ -2,13 +2,17 @@ package com.baiye.baiyeaiagent.app;
 
 import com.baiye.baiyeaiagent.advisor.MyLoggerAdvisor;
 import com.baiye.baiyeaiagent.chatmemory.FileBasedChatMemory;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,6 +29,8 @@ import java.util.List;
 @Component
 @Slf4j
 public class LoveApp {
+
+    //https://docs.spring.io/spring-ai/reference/api/chat-memory.html#_memory_in_chat_client
 
     private final ChatClient chatClient;
 
@@ -85,6 +91,9 @@ public class LoveApp {
         return content;
     }
 
+    //https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html#_bean_output_converter
+
+
     //定义恋爱报告类，Java14的record特性快速定义
     record LoveReport(String title, List<String> suggestions) {
     }
@@ -110,6 +119,42 @@ public class LoveApp {
         log.info("loveReport: {}", loveReport);
         return loveReport;
     }
+
+
+    // AI 恋爱知识库问答功能
+
+    //https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html#_questionansweradvisor
+
+    @Resource
+    private VectorStore loveAppVectorStore;
+
+    @Resource
+    private Advisor loveAppRagCloudAdvisor;
+
+    /**
+     * AI 恋爱知识库问答功能,查询增强
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public String doChatWithRag(String message, String chatId) {
+        ChatResponse chatResponse = chatClient
+                .prompt()
+                .user(message)
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
+                // 开启日志，便于观察效果
+                .advisors(new MyLoggerAdvisor())
+                // 应用RAG知识库问答,查询增强
+                .advisors(new QuestionAnswerAdvisor(loveAppVectorStore))
+                //应用RAG检索增强服务（基于云知识库）
+                //.advisors(loveAppRagCloudAdvisor)
+                .call()
+                .chatResponse();
+        String content = chatResponse.getResult().getOutput().getText();
+        log.info("content: {}", content);
+        return content;
+    }
+
 
 }
 

@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
  * @Version 1.0
  */
 public class FileBasedChatMemory implements ChatMemoryRepository {
+
+    //https://docs.spring.io/spring-ai/reference/api/chat-memory.html
+
     private final String BASE_DIR;
 
     // 1. 锁池：用于确保同一个 conversationId 在同一时间只能被一个线程操作

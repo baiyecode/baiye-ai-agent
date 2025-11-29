@@ -19,6 +19,9 @@ import reactor.core.publisher.Flux;
 @Slf4j
 public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
 
+
+	//https://docs.spring.io/spring-ai/reference/api/advisors.html#_examples
+
 	private static final Logger logger = LoggerFactory.getLogger(MyLoggerAdvisor.class);
 
 	@Override
@@ -57,6 +60,7 @@ public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
 	private void logRequest(ChatClientRequest request) {
 		//logger.debug("request: {}", request);
 		log.info("AI Request: {}", request.prompt().getUserMessage().getText());
+		//return request;
 	}
 
 	private void logResponse(ChatClientResponse chatClientResponse) {
