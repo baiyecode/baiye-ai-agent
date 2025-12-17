@@ -26,7 +26,7 @@ public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
 
 	@Override
 	public String getName() {
-		return this.getClass().getSimpleName();
+		return this.getClass().getSimpleName();//返回当前对象所属类的简单类名（不包含包名）
 	}
 
 	@Override

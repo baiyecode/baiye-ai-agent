@@ -13,6 +13,7 @@ import com.alibaba.dashscope.utils.JsonUtils;
 
 /**
  * 阿里云 灵积 SDK AI 调用AI大模型
+ * 官方文档：<a href="https://help.aliyun.com/zh/model-studio/qwen-api-reference">...</a>
  */
 public class SdkAiInvoke {
     public static GenerationResult callWithMessage() throws ApiException, NoApiKeyException, InputRequiredException {

@@ -12,7 +12,9 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -39,11 +41,12 @@ public class LoveApp {
             "恋爱状态询问沟通、习惯差异引发的矛盾；已婚状态询问家庭责任与亲属关系处理的问题。" +
             "引导用户详述事情经过、对方反应及自身想法，以便给出专属解决方案。";
 
+
     /**
      * 1. 初始化 ChatClient 对象
      * 使用构造器注入 dashscopeChatModel
      */
-    public LoveApp(ChatModel dashscopeChatModel) {
+    public LoveApp(@Qualifier("dashScopeChatModel") ChatModel dashscopeChatModel) {
         // 创建基于内存的对话记忆，默认使用 InMemoryChatMemoryRepository
 
         // 初始化基于文件的对话记忆
@@ -115,7 +118,7 @@ public class LoveApp {
                         .param(ChatMemory.CONVERSATION_ID, chatId)
                 )
                 .call()
-                .entity(LoveReport.class);
+                .entity(LoveReport.class);//结构化输出
         log.info("loveReport: {}", loveReport);
         return loveReport;
     }
@@ -123,13 +126,17 @@ public class LoveApp {
 
     // AI 恋爱知识库问答功能
 
-    //https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html#_questionansweradvisor
+    //https://docs.spring.io/spring-ai/reference/api/retrieval-augmented-generation.html
 
     @Resource
     private VectorStore loveAppVectorStore;
 
     @Resource
     private Advisor loveAppRagCloudAdvisor;
+
+    //向量存储
+    @Resource
+    private VectorStore pgVectorVectorStore;
 
     /**
      * AI 恋爱知识库问答功能,查询增强
@@ -146,8 +153,10 @@ public class LoveApp {
                 .advisors(new MyLoggerAdvisor())
                 // 应用RAG知识库问答,查询增强
                 .advisors(new QuestionAnswerAdvisor(loveAppVectorStore))
-                //应用RAG检索增强服务（基于云知识库）
+                //应用 RAG 检索增强服务（基于云知识库）
                 //.advisors(loveAppRagCloudAdvisor)
+                // 应用 RAG 检索增强服务（基于 PgVector 向量存储）
+                //.advisors(new QuestionAnswerAdvisor(pgVectorVectorStore))
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
@@ -155,6 +164,33 @@ public class LoveApp {
         return content;
     }
 
+    @Resource
+    private ToolCallback[] allTools;
+
+    /**
+     * AI 恋爱报告功能（支持调用工具）
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public String doChatWithTools(String message, String chatId) {
+        ChatResponse response = chatClient
+                .prompt()
+                .user(message)
+                .advisors(a -> a
+                        // 指定对话 ID
+                        .param(ChatMemory.CONVERSATION_ID, chatId)
+                )
+                // 开启日志，便于观察效果
+                .advisors(new MyLoggerAdvisor())
+                //.tools(allTools)
+                .toolCallbacks(allTools)
+                .call()
+                .chatResponse();
+        String content = response.getResult().getOutput().getText();
+        log.info("content: {}", content);
+        return content;
+    }
 
 }
 

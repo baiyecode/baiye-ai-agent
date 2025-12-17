@@ -5,6 +5,7 @@ import dev.langchain4j.community.model.dashscope.QwenChatModel;
 
 /**
  * LangChain4j 调用AI大模型
+ * 官方文档：<a href="https://docs.langchain4j.dev/get-started/">...</a>
  */
 public class LangChainAiInvoke {
 

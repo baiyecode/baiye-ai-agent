@@ -5,31 +5,23 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+
 
 /**
- * ClassName: SpringAiAiInvoke
- * Package: com.baiye.baiyeaiagent.demo.invoke
- * Description: Spring AI 调用大模型（阿里）
- * 官方文档：<a href="https://java2ai.com/docs/overview/">...</a>
- *
- * @Author 白夜
- * @Create 2025/11/25 21:00
- * @Version 1.0
+ * Spring AI调用ollama
  */
 // 取消注释即可在 SpringBoot 项目启动时执行
-@Component
-public class SpringAiAiInvoke implements CommandLineRunner {
+//@Component
+public class OllamaAiInvoke implements CommandLineRunner {
 
     @Resource
-    private ChatModel dashscopeChatModel;
+    private ChatModel ollamaChatModel;
 
     @Override
     public void run(String... args) throws Exception {
-        AssistantMessage output = dashscopeChatModel.call(new Prompt("你好，我是白夜"))
+        AssistantMessage output = ollamaChatModel.call(new Prompt("你好，我是白夜"))
                 .getResult()
                 .getOutput();
         System.out.println(output.getText());
     }
 }
-

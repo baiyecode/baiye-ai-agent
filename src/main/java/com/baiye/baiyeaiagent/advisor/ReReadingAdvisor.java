@@ -41,6 +41,7 @@ public class ReReadingAdvisor implements BaseAdvisor {
 			.build()
 			.render();
 
+
 		return chatClientRequest.mutate()
 			.prompt(chatClientRequest.prompt().augmentUserMessage(augmentedUserText))
 			.build();
