@@ -169,6 +169,12 @@
             <version>9.1.0</version>
             <scope>test</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-starter-mcp-client -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-client</artifactId>
+            <version>1.0.0-M7</version>
+        </dependency>
 
         <dependency>
             <groupId>dev.langchain4j</groupId>

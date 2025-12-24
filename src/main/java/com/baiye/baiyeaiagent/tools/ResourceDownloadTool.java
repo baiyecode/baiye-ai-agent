@@ -11,7 +11,7 @@ import java.io.File;
 /**
  * ClassName: ResourceDownloadTool
  * Package: com.baiye.baiyeaiagent.tools
- * Description:
+ * Description: 资源下载工具
  *
  * @Author 白夜
  * @Create 2025/12/16 22:41

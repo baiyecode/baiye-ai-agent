@@ -3,6 +3,26 @@ spring:
     name: baiye-ai-agent
   profiles:
     active: local
+  ai:
+    mcp:
+      client:
+        enabled: true
+#        sse:
+#          connections:
+#            server1:
+#              url: http://localhost:8127
+        stdio:
+          enabled: true
+          servers-configuration: classpath:mcp-servers.json
+#  Spring AI调用阿里dashscope
+#  application:
+#    name: spring-ai-alibaba-qwq-chat-client-example
+#  ai:
+#    dashscope:
+#      api-key: 你的 API Key
+#      chat:
+#        options:
+#          model: qwen-plus 要调用的模型名称
 # Spring AI调用ollama
 #  ai:
 #    ollama:
