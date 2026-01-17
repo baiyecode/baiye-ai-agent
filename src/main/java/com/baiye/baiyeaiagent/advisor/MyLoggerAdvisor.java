@@ -15,57 +15,46 @@ import reactor.core.publisher.Flux;
 /**
  * 自定义日志advisor
  * 可以打印info级别的日志，只输出单次用户提示词和AI回复的文本
+ * <a href="https://docs.spring.io/spring-ai/reference/api/advisors.html#_examples">...</a>
  */
 @Slf4j
 public class MyLoggerAdvisor implements CallAdvisor, StreamAdvisor {
 
 
-	//https://docs.spring.io/spring-ai/reference/api/advisors.html#_examples
+    @Override
+    public String getName() {
+        return this.getClass().getSimpleName();//返回当前对象所属类的简单类名（不包含包名）
+    }
 
-	private static final Logger logger = LoggerFactory.getLogger(MyLoggerAdvisor.class);
-
-	@Override
-	public String getName() {
-		return this.getClass().getSimpleName();//返回当前对象所属类的简单类名（不包含包名）
-	}
-
-	@Override
-	public int getOrder() {
-		return 0;
-	}
+    @Override
+    public int getOrder() {
+        return 0;
+    }
 
 
-	@Override
-	public ChatClientResponse adviseCall(ChatClientRequest chatClientRequest, CallAdvisorChain callAdvisorChain) {
-		logRequest(chatClientRequest);
+    private ChatClientRequest before(ChatClientRequest request) {
+        log.info("AI Request: {}", request.prompt());
+        return request;
+    }
 
-		ChatClientResponse chatClientResponse = callAdvisorChain.nextCall(chatClientRequest);
+    private void observeAfter(ChatClientResponse chatClientResponse) {
+        log.info("AI Response: {}", chatClientResponse.chatResponse().getResult().getOutput().getText());
+    }
 
-		logResponse(chatClientResponse);
+    @Override
+    public ChatClientResponse adviseCall(ChatClientRequest chatClientRequest, CallAdvisorChain chain) {
+        chatClientRequest = before(chatClientRequest);
+        ChatClientResponse chatClientResponse = chain.nextCall(chatClientRequest);
+        observeAfter(chatClientResponse);
+        return chatClientResponse;
+    }
 
-		return chatClientResponse;
-	}
+    @Override
+    public Flux<ChatClientResponse> adviseStream(ChatClientRequest chatClientRequest, StreamAdvisorChain chain) {
+        chatClientRequest = before(chatClientRequest);
+        Flux<ChatClientResponse> chatClientResponseFlux = chain.nextStream(chatClientRequest);
+        return (new ChatClientMessageAggregator()).aggregateChatClientResponse(chatClientResponseFlux, this::observeAfter);
+    }
 
-	@Override
-	public Flux<ChatClientResponse> adviseStream(ChatClientRequest chatClientRequest,
-												 StreamAdvisorChain streamAdvisorChain) {
-		logRequest(chatClientRequest);
-
-		Flux<ChatClientResponse> chatClientResponses = streamAdvisorChain.nextStream(chatClientRequest);
-
-		// 聚合响应
-		return new ChatClientMessageAggregator().aggregateChatClientResponse(chatClientResponses, this::logResponse);
-	}
-
-	private void logRequest(ChatClientRequest request) {
-		//logger.debug("request: {}", request);
-		log.info("AI Request: {}", request.prompt().getUserMessage().getText());
-		//return request;
-	}
-
-	private void logResponse(ChatClientResponse chatClientResponse) {
-		//logger.debug("response: {}", chatClientResponse);
-		log.info("AI Response: {}", chatClientResponse.chatResponse().getResult().getOutput().getText());
-	}
 
 }

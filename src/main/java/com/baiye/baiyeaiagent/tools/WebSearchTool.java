@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
  * ClassName: WebSearchTool
  * Package: com.baiye.baiyeaiagent.tools
  * Description: 网络搜索工具
+ * <a href="https://www.searchapi.io/baidu">...</a>
  *
  * @Author 白夜
  * @Create 2025/12/16 19:56

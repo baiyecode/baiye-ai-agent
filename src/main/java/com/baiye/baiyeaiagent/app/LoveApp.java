@@ -2,20 +2,22 @@ package com.baiye.baiyeaiagent.app;
 
 import com.baiye.baiyeaiagent.advisor.MyLoggerAdvisor;
 import com.baiye.baiyeaiagent.chatmemory.FileBasedChatMemory;
+import com.baiye.baiyeaiagent.rag.LoveAppRagCustomAdvisorFactory;
+import com.baiye.baiyeaiagent.rag.QueryRewriter;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -48,20 +50,20 @@ public class LoveApp {
      * 1. 初始化 ChatClient 对象
      * 使用构造器注入 dashscopeChatModel
      */
-    public LoveApp(@Qualifier("dashScopeChatModel") ChatModel dashscopeChatModel) {
+    public LoveApp(ChatModel dashscopeChatModel) {
         // 创建基于内存的对话记忆，默认使用 InMemoryChatMemoryRepository
 
         // 初始化基于文件的对话记忆
-        String fileDir = System.getProperty("user.dir") + "/tmp/chat-memory";
-        FileBasedChatMemory fileBasedChatMemory = new FileBasedChatMemory(fileDir);
+        //String fileDir = System.getProperty("user.dir") + "/tmp/chat-memory";
+        //FileBasedChatMemory fileBasedChatMemory = new FileBasedChatMemory(fileDir);
         // MessageWindowChatMemory 用于管理消息窗口，防止上下文过长
-        ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                .chatMemoryRepository(fileBasedChatMemory)
-                .maxMessages(10) // 默认最大存储消息数，防止内存溢出
+        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .maxMessages(20)
                 .build();
 
         // 初始化 ChatClient
-        this.chatClient = ChatClient.builder(dashscopeChatModel)
+        chatClient = ChatClient.builder(dashscopeChatModel)
                 // 指定默认的系统 Prompt
                 .defaultSystem(SYSTEM_PROMPT)
                 // 指定基于内存的对话记忆 Advisor
@@ -96,9 +98,25 @@ public class LoveApp {
         return content;
     }
 
+    /**
+     * AI 基础对话功能（支持SSE）
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public Flux<String> doChatByStream(String message, String chatId) {
+        return chatClient
+                .prompt()
+                .user(message)
+                .advisors(a -> a
+                        // 指定对话 ID
+                        .param(ChatMemory.CONVERSATION_ID, chatId)
+                )
+                .stream()
+                .content();
+    }
+
     //https://docs.spring.io/spring-ai/reference/api/structured-output-converter.html#_bean_output_converter
-
-
     //定义恋爱报告类，Java14的record特性快速定义
     record LoveReport(String title, List<String> suggestions) {
     }
@@ -140,6 +158,9 @@ public class LoveApp {
     @Resource
     private VectorStore pgVectorVectorStore;
 
+    @Resource
+    private QueryRewriter queryRewriter;
+
     /**
      * AI 恋爱知识库问答功能,查询增强
      * @param message
@@ -147,9 +168,11 @@ public class LoveApp {
      * @return
      */
     public String doChatWithRag(String message, String chatId) {
+        // 查询重写
+        String rewrittenMessage = queryRewriter.doQueryRewrite(message);
         ChatResponse chatResponse = chatClient
                 .prompt()
-                .user(message)
+                .user(rewrittenMessage)
                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 // 开启日志，便于观察效果
                 .advisors(new MyLoggerAdvisor())
@@ -159,6 +182,12 @@ public class LoveApp {
                 //.advisors(loveAppRagCloudAdvisor)
                 // 应用 RAG 检索增强服务（基于 PgVector 向量存储）
                 //.advisors(new QuestionAnswerAdvisor(pgVectorVectorStore))
+                // 应用自定义的 RAG 检索增强服务（文档查询器 + 上下文增强器）
+//                .advisors(
+//                        LoveAppRagCustomAdvisorFactory.createLoveAppRagCustomAdvisor(
+//                                loveAppVectorStore, "单身"
+//                        )
+//                )
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
@@ -185,7 +214,6 @@ public class LoveApp {
                 )
                 // 开启日志，便于观察效果
                 .advisors(new MyLoggerAdvisor())
-                //.tools(allTools)
                 .toolCallbacks(allTools)
                 .call()
                 .chatResponse();
@@ -194,12 +222,10 @@ public class LoveApp {
         return content;
     }
 
+    // AI 调用 MCP 服务
+
     @Resource
     private ToolCallbackProvider toolCallbackProvider;
-
-    // 1. 改为注入 List，并使用 @Autowired
-    //@Autowired
-    //private List<ToolCallbackProvider> toolCallbackProviders;
 
     /**
      * AI 恋爱报告功能（支持调用MCP）
@@ -223,25 +249,6 @@ public class LoveApp {
         String content = response.getResult().getOutput().getText();
         log.info("content: {}", content);
         return content;
-    }
-
-
-    /**
-     * AI 恋爱报告功能（支持SSE）
-     * @param message
-     * @param chatId
-     * @return
-     */
-    public Flux<String> doChatByStream(String message, String chatId) {
-        return chatClient
-                .prompt()
-                .user(message)
-                .advisors(a -> a
-                        // 指定对话 ID
-                        .param(ChatMemory.CONVERSATION_ID, chatId)
-                )
-                .stream()
-                .content();
     }
 
 

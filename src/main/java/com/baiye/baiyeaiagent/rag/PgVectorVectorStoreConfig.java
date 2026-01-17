@@ -19,7 +19,8 @@ import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgIndexT
  * 基于PgVector的向量存储配置,需要购买阿里云服务
  * 连接：<a href="https://www.aliyun.com/product/rds/postgresql">...</a>
  */
-@Configuration
+// 为方便开发调试和部署，临时注释，如果需要使用 PgVector 存储知识库，取消注释即可
+//@Configuration
 public class PgVectorVectorStoreConfig {
 
     @Resource

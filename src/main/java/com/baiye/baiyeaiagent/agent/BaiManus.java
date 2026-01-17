@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * ClassName: BaiManus
  * Package: com.baiye.baiyeaiagent.agent
- * Description:
+ * Description: 超级智能体
  *
  * @Author 白夜
  * @Create 2026/1/2 16:40
